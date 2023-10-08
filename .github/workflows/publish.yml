@@ -9,8 +9,8 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: ${{ steps.image.outputs.image }}
-      digest: ${{ steps.build.outputs.digest }}
+      image: andifalk/supply-chain-security:${GITHUB_REF_NAME}
+      digest: ${{ steps.build-and-push.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v3
@@ -21,6 +21,10 @@ jobs:
         run: mvn --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.1.1
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2.1.0
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@dc7b9719a96d48369863986a06765841d7ea23f6
       - name: Login to Docker Hub
@@ -28,26 +32,21 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@69f6fc9d46f2f8bf0d5491e4aabe0bb8c6a4678a
-        with:
-          images: andifalk/supply-chain-security
       - name: Build and push Docker image
-        uses: docker/build-push-action@e551b19e49efd4e98792db7592c17c09b89db8d8
-        id: build
+        uses: docker/build-push-action@v5
+        id: build-and-push
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-      - name: Output image
-        id: image
+          tags: andifalk/supply-chain-security:${GITHUB_REF_NAME}
+      - name: Sign image with a key
         run: |
-          # NOTE: Set the image as an output because the `env` context is not
-          # available to the inputs of a reusable workflow call.
-          image_name="andifalk/supply-chain-security"
-          echo "image=$image_name" >> "$GITHUB_OUTPUT"
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "andifalk/supply-chain-security:${GITHUB_REF_NAME}@${DIGEST}"
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
 
   # This step calls the container workflow to generate provenance and push it to
   # the container registry.
@@ -59,8 +58,8 @@ jobs:
       packages: write # for uploading attestations.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.9.0
     with:
-      image: "andifalk/supply-chain-security"
-      digest: ${{ needs.build.outputs.digest }}
+      image: "andifalk/supply-chain-security:${GITHUB_REF_NAME}"
+      digest: ${{ publish.outputs.digest }}
       registry-username: andifalk
     secrets:
       registry-password: ${{ secrets.DOCKERHUB_TOKEN }}

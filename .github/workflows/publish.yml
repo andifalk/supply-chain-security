@@ -32,6 +32,18 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            andifalk/supply-chain-security            
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=release
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha        
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         id: build-and-push
@@ -39,11 +51,13 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: andifalk/supply-chain-security:$GITHUB_REF_NAME
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
       - name: Sign image with a key
         run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "andifalk/supply-chain-security:${GITHUB_REF_NAME}@${DIGEST}"
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
         env:
+          TAGS: ${{ steps.meta.outputs.tags }}
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           DIGEST: ${{ steps.build-and-push.outputs.digest }}

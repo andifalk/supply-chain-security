@@ -39,7 +39,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: andifalk/supply-chain-security:${GITHUB_REF_NAME}
+          tags: "andifalk/supply-chain-security:${GITHUB_REF_NAME}"
       - name: Sign image with a key
         run: |
           cosign sign --yes --key env://COSIGN_PRIVATE_KEY "andifalk/supply-chain-security:${GITHUB_REF_NAME}@${DIGEST}"

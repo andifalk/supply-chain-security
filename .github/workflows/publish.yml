@@ -27,10 +27,18 @@ jobs:
         run: docker build . --file Dockerfile --platform linux/amd64 --tag "andifalk/supply-chain-security:${GITHUB_REF_NAME}"
       - name: Push image
         run: docker push "andifalk/supply-chain-security:${GITHUB_REF_NAME}"
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.1.1
-      - name: Sign image with a key
-        run: cosign sign --yes --key env://COSIGN_PRIVATE_KEY "andifalk/supply-chain-security:${GITHUB_REF_NAME}"
-        env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+  # This step calls the container workflow to generate provenance and push it to
+  # the container registry.
+  provenance:
+    needs: [publish]
+    permissions:
+      actions: read # for detecting the Github Actions environment.
+      id-token: write # for creating OIDC tokens for signing.
+      packages: write # for uploading attestations.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.9.0
+    with:
+      image: "andifalk/supply-chain-security:${GITHUB_REF_NAME}"
+      registry-username: ${{ secrets.DOCKERHUB_USER }}
+    secrets:
+      registry-password: ${{ secrets.DOCKERHUB_TOKEN }}

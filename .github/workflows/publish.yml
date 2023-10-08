@@ -9,7 +9,7 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: andifalk/supply-chain-security:${GITHUB_REF_NAME}
+      image: ${{ steps.meta.outputs.tags }}
       digest: ${{ steps.build-and-push.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
@@ -37,12 +37,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            andifalk/supply-chain-security            
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha        
+            andifalk/supply-chain-security        
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         id: build-and-push
@@ -52,14 +47,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - name: Sign image with a key
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
-        env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
 
   # This step calls the container workflow to generate provenance and push it to
   # the container registry.
@@ -71,7 +58,7 @@ jobs:
       packages: write # for uploading attestations.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.9.0
     with:
-      image: "andifalk/supply-chain-security:${GITHUB_REF_NAME}"
+      image: ${{ needs.publish.outputs.image }}
       digest: ${{ needs.publish.outputs.digest }}
       registry-username: andifalk
     secrets:

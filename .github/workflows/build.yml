@@ -1,6 +1,5 @@
 name: Build with provenance
 on:
-  - workflow_dispatch
   - push
 
 permissions: read-all
@@ -23,7 +22,3 @@ jobs:
           architecture: x64
       - name: Maven build
         run: ./mvnw --batch-mode --update-snapshots verify
-      - name: Add provenence
-        uses: slsa-framework/slsa-github-generator/.github/workflows/builder_maven_slsa3.yml@v1.9.0
-        with:
-          rekor-log-public: true

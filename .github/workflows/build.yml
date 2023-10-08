@@ -28,8 +28,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build image and push
-        run: docker build . --file Dockerfile --platform linux/amd64 --tag "docker.io/andifalk/supply-chain-security:latest"
+      - name: Build image
+        run: docker build . --file Dockerfile --platform linux/amd64 --tag "andifalk/supply-chain-security:latest"
+      - name: Push image
+        run: docker push andifalk/supply-chain-security:latest
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:

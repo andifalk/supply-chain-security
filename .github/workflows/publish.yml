@@ -40,5 +40,5 @@ jobs:
     with:
       image: "andifalk/supply-chain-security:${GITHUB_REF_NAME}"
       registry-username: ${{ secrets.DOCKERHUB_USER }}
-      secrets:
-        registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+    secrets:
+      registry-password: ${{ secrets.DOCKERHUB_TOKEN }}

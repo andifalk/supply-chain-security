@@ -33,6 +33,10 @@ public class Message {
         return identifier;
     }
 
+    public void setIdentifier(UUID identifier) {
+        this.identifier = identifier;
+    }
+
     public String getMessage() {
         return message;
     }

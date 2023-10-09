@@ -9,6 +9,6 @@ import java.util.UUID;
 @Repository
 public interface MessageRepository extends ListCrudRepository<Message, Long> {
 
-    public Optional<Message> findOneMessageByIdentifier(UUID identifier);
-
+    Optional<Message> findOneMessageByIdentifier(UUID identifier);
+    int deleteMessageByIdentifier(UUID identifier);
 }

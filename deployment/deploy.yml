@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: supply-chain-security
+  name: supply-chain-security
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: supply-chain-security
+  template:
+    metadata:
+      labels:
+        app: supply-chain-security
+    spec:
+      containers:
+      - image: andifalk/supply-chain-security:latest
+        name: supply-chain-security

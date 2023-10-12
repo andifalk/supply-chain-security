@@ -21,7 +21,7 @@ public class DemoApi {
 
     @GetMapping
     public String index() {
-        return "it works";
+        return "it really works";
     }
 
     @ResponseStatus(HttpStatus.OK)
